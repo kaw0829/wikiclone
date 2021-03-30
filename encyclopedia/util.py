@@ -37,3 +37,13 @@ def get_entry(title):
         return None
 
 
+
+
+def search_entries(title):
+    matching_list = []
+    for entry in list_entries():
+        if title[0:len(title)].upper() == entry[0:len(title)].upper():
+            matching_list.append(entry)
+    return matching_list
+
+
