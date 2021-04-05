@@ -1,11 +1,27 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 import markdown2
 from django import forms
+from django.http import HttpResponse, HttpResponseRedirect
+from django.urls import reverse
+from django.contrib import messages 
 
 from . import util
 
 class SearchForm(forms.Form):
     requested_article = forms.CharField(label='Search', max_length=100)
+
+class AddEntryForm(forms.Form):
+    title = forms.CharField(label='title', max_length=100)
+    info = forms.CharField(label='info', widget=forms.Textarea(attrs={"rows":20, "cols":10}))
+
+class EditPageForm(forms.Form):
+    pagename = forms.CharField(label="Title",disabled = False,required = False,
+    widget= forms.HiddenInput
+    (attrs={'class':'col-sm-12','style':'bottom:1rem'}))
+   
+    body = forms.CharField(label="Markdown content",help_text="<p class='text-secondary'>Please refer <a class='text-info' href = https://docs.github.com/en/github/writing-on-github/basic-writing-and-formatting-syntax> GitHub’s Markdown guide</a> </p>",
+    widget= forms.Textarea
+    (attrs={"rows":20, "cols":80,'class':'col-sm-11','style':'top:2rem'}))
 
 def index(request):
     if request.method == "POST":
@@ -61,7 +77,60 @@ def get_entry(request, title):
             "form": form
         })
 
+def add_entry(request):
+    if request.method == 'POST':
+        form = AddEntryForm(request.POST)
+        if form.is_valid():
+            title = form.cleaned_data['title']
+            if title in util.list_entries():
+                search_form = SearchForm()
+                return render(request, "encyclopedia/create_entry.html", {
+                "entry_form": form,
+                "message": "Title already exist. Try another.",
+                "form": search_form
+                 })
+            else:
+                info = form.cleaned_data['info']
+                util.save_entry(title, info)
+                # HttpResponseRedirect('url index')
+                return HttpResponseRedirect(reverse('index'))
+    else:    
+        entry_form = AddEntryForm()
+        search_form = SearchForm()
+        return render(request, "encyclopedia/create_entry.html", {
+            "entry_form": entry_form,
+            "form": search_form
+        })
 
+def edit_entry(request, entry):
+    if request.method == 'POST':
+        form = AddEntryForm(request.POST)
+        title = form.cleaned_data['title']
+        info = form.cleaned_data['info']
+        util.save_entry(title, info)
+
+        return HttpResponseRedirect(reverse('index'))
+    else:
+        content = util.get_entry(entry)
+        # edit_form = AddEntryForm()
+        return render(request, "encyclopedia/edit.html", {
+            # "edit_form": edit_form,
+            "title": entry,
+            "content": content
+        })
+            
+def edit(request, title):
+    content = util.get_entry(title.strip())
+    if content == None:
+        return render(request, "encyclopedia/edit.html", {'error': "404 Not Found"})
+
+    if request.method == "POST":
+        content = request.POST.get("content").strip()
+        if content == "":
+            return render(request, "encyclopedia/edit.html", {"message": "Can't save with empty field.", "title": title, "content": content})
+        util.save_entry(title, content)
+        return redirect(index)
+    return render(request, "encyclopedia/edit.html", {'content': content, 'title': title})
 
 # def get_name(request):
 #     # if this is a POST request we need to process the form data

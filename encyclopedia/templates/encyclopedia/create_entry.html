@@ -1,0 +1,21 @@
+{% extends "encyclopedia/layout.html" %}
+
+{% block title %}
+    Create New Page
+{% endblock %}
+
+{% block body %}
+    <h1>Create new WIKI entry</h1>
+    <form method="POST">
+        {{ entry_form }}
+        {% csrf_token %}
+        <input type="submit" value="Submit">
+        {%if message%}
+            <div class="alert alert-danger" style="text-align: center;" role="alert">
+            {{message}}
+            </div>
+        {%endif%}
+    </form>
+        
+
+{% endblock %}

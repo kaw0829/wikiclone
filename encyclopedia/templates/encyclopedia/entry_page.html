@@ -9,5 +9,6 @@
 {% block body %}
 {% comment %} safe is neccesary because django default escapes to prevent accidental displays of html {% endcomment %}
     {{entry_info | safe}}
-
+<a href="edit.html/{{entry_title}}" class="badge badge-info">Edit This Page</a>
 {% endblock body %}
+
